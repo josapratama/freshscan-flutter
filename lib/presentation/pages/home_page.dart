@@ -97,7 +97,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
+        padding: const EdgeInsets.only(bottom: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -111,7 +111,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      floatingActionButton: _buildFAB(),
+      floatingActionButton: null,
     );
   }
 
@@ -567,16 +567,5 @@ class _HomePageState extends State<HomePage> {
     ).push(MaterialPageRoute(builder: (_) => ResultPage(scanResult: item)));
   }
 
-  // ── FAB ────────────────────────────────────────────────────────────────────
-
-  Widget _buildFAB() {
-    return FloatingActionButton.extended(
-      onPressed: _pickFromCamera,
-      backgroundColor: AppColors.primaryGreen,
-      foregroundColor: Colors.white,
-      elevation: 6,
-      icon: const Icon(Icons.camera_alt_rounded),
-      label: const Text('Scan', style: TextStyle(fontWeight: FontWeight.w600)),
-    );
-  }
+  // ── FAB dihapus karena duplikat dengan tombol Scan di body ────────────────
 }
