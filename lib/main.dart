@@ -19,8 +19,8 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables dari .env
-  await dotenv.load(fileName: '.env');
+  // Load environment variables dari assets/.env
+  await dotenv.load(fileName: 'assets/.env');
 
   // Inisialisasi Firebase
   await Firebase.initializeApp(
