@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/utils/image_compressor.dart';
 import '../../data/services/openrouter_service.dart';
 import '../../data/services/firestore_history_service.dart';
 import '../../data/models/scan_result_model.dart';
@@ -77,7 +78,12 @@ class _ScanPageState extends State<ScanPage> with TickerProviderStateMixin {
 
     // Step 2: Mengunggah
     _updateStep(1);
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    // Log info ukuran gambar (debug)
+    await ImageCompressor.logFileInfo(widget.imagePath);
+
+    await Future.delayed(const Duration(milliseconds: 400));
 
     // Step 3: AI mengidentifikasi
     _updateStep(2);

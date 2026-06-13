@@ -12,6 +12,7 @@ import 'scan_page.dart';
 import 'history_page.dart';
 import 'result_page.dart';
 import 'login_page.dart';
+import 'profile_page.dart';
 
 /// Halaman utama FreshScan
 class HomePage extends StatefulWidget {
@@ -136,11 +137,15 @@ class _HomePageState extends State<HomePage> {
             );
           },
         ),
-        // Tombol logout
+        // Tombol profil — menggantikan logout langsung
         IconButton(
-          icon: const Icon(Icons.logout_rounded),
-          tooltip: 'Keluar',
-          onPressed: () => _confirmLogout(authService),
+          icon: const Icon(Icons.person_outline_rounded),
+          tooltip: 'Profil',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            );
+          },
         ),
         const SizedBox(width: 4),
       ],
@@ -290,7 +295,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Tombol Scan Kamera (Utama)
+          // Tombol Scan Kamera (Utama) — hanya icon Flutter, tanpa emoji
           SizedBox(
             width: double.infinity,
             height: 58,
@@ -311,7 +316,7 @@ class _HomePageState extends State<HomePage> {
                   Icon(Icons.camera_alt_rounded, size: 22),
                   SizedBox(width: 10),
                   Text(
-                    AppStrings.scanButton,
+                    'Scan dengan Kamera',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -323,7 +328,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 12),
 
-          // Tombol Galeri (Sekunder)
+          // Tombol Galeri (Sekunder) — hanya icon Flutter, tanpa emoji
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -345,7 +350,7 @@ class _HomePageState extends State<HomePage> {
                   Icon(Icons.photo_library_rounded, size: 20),
                   SizedBox(width: 10),
                   Text(
-                    AppStrings.galleryButton,
+                    'Pilih dari Galeri',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

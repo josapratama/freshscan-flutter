@@ -3,9 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../main.dart';
+import 'onboarding_page.dart';
 
 /// Splash screen FreshScan
 /// Menampilkan logo, nama, dan tagline sebelum menuju HomePage
+/// Juga mengecek apakah onboarding perlu ditampilkan
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -20,20 +22,40 @@ class _SplashPageState extends State<SplashPage>
   @override
   void initState() {
     super.initState();
-    // Navigasi ke AuthWrapper setelah 2.5 detik (cek status login)
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const AuthWrapper(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
-      }
-    });
+    _navigate();
+  }
+
+  Future<void> _navigate() async {
+    // Tunggu animasi splash selesai
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    // Cek apakah onboarding sudah pernah ditampilkan
+    final onboardingDone = await OnboardingPage.isOnboardingDone();
+
+    if (!mounted) return;
+
+    if (!onboardingDone) {
+      // Tampilkan onboarding untuk user baru
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const OnboardingPage(),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    } else {
+      // User lama — cek status auth
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const AuthWrapper(),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    }
   }
 
   @override

@@ -9,7 +9,7 @@ import '../widgets/history_tile.dart';
 import 'result_page.dart';
 
 /// Halaman riwayat scan
-/// Menampilkan semua hasil scan sebelumnya dengan swipe-to-delete
+/// Menampilkan semua hasil scan sebelumnya dengan swipe-to-delete dan search
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
 
@@ -20,25 +20,50 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _filterKategori = 'semua'; // 'semua', 'buah', 'sayuran'
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(context),
-      body: Consumer<FirestoreHistoryService>(
-        builder: (context, historyService, _) {
-          if (historyService.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryGreen),
-            );
-          }
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          _buildFilterChips(),
+          Expanded(
+            child: Consumer<FirestoreHistoryService>(
+              builder: (context, historyService, _) {
+                if (historyService.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen),
+                  );
+                }
 
-          if (historyService.isEmpty) {
-            return _buildEmptyState();
-          }
+                final filtered = _getFilteredItems(historyService);
 
-          return _buildHistoryList(historyService);
-        },
+                if (historyService.isEmpty) {
+                  return _buildEmptyState(isSearch: false);
+                }
+
+                if (filtered.isEmpty) {
+                  return _buildEmptyState(isSearch: true);
+                }
+
+                return _buildHistoryList(filtered, historyService);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -67,9 +92,120 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
+  // ── Search Bar ─────────────────────────────────────────────────────────────
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (val) => setState(() => _searchQuery = val),
+        decoration: InputDecoration(
+          hintText: 'Cari buah atau sayuran...',
+          hintStyle: const TextStyle(color: AppColors.textGrey, fontSize: 14),
+          prefixIcon:
+              const Icon(Icons.search_rounded, color: AppColors.primaryGreen),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear_rounded, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.cardWhite,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.softGreen),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.softGreen),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide:
+                const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Filter Chips ───────────────────────────────────────────────────────────
+
+  Widget _buildFilterChips() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Row(
+        children: [
+          _buildChip('semua', 'Semua', Icons.apps_rounded),
+          const SizedBox(width: 8),
+          _buildChip('buah', 'Buah 🍎', Icons.apple_rounded),
+          const SizedBox(width: 8),
+          _buildChip('sayuran', 'Sayuran 🥦', Icons.eco_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(String value, String label, IconData icon) {
+    final isSelected = _filterKategori == value;
+    return GestureDetector(
+      onTap: () => setState(() => _filterKategori = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGreen : AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : AppColors.softGreen,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.textGrey,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Filter Logic ───────────────────────────────────────────────────────────
+
+  List<ScanResultModel> _getFilteredItems(FirestoreHistoryService service) {
+    List<ScanResultModel> items = service.history;
+
+    // Filter kategori
+    if (_filterKategori != 'semua') {
+      items = items
+          .where((item) => item.kategori.toLowerCase() == _filterKategori)
+          .toList();
+    }
+
+    // Filter search query
+    if (_searchQuery.isNotEmpty) {
+      final lower = _searchQuery.toLowerCase();
+      items = items
+          .where((item) =>
+              item.namaIndonesia.toLowerCase().contains(lower) ||
+              item.namaItem.toLowerCase().contains(lower))
+          .toList();
+    }
+
+    return items;
+  }
+
   // ── Empty State ────────────────────────────────────────────────────────────
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({required bool isSearch}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -79,29 +215,31 @@ class _HistoryPageState extends State<HistoryPage> {
             Container(
               width: 100,
               height: 100,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.softGreen,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.history_rounded,
+              child: Icon(
+                isSearch ? Icons.search_off_rounded : Icons.history_rounded,
                 size: 50,
                 color: AppColors.primaryGreen,
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              AppStrings.historyEmpty,
-              style: TextStyle(
+            Text(
+              isSearch ? 'Tidak ada hasil' : AppStrings.historyEmpty,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              AppStrings.historyEmptyDesc,
-              style: TextStyle(fontSize: 14, color: AppColors.textGrey),
+            Text(
+              isSearch
+                  ? 'Coba kata kunci lain atau ubah filter'
+                  : AppStrings.historyEmptyDesc,
+              style: const TextStyle(fontSize: 14, color: AppColors.textGrey),
               textAlign: TextAlign.center,
             ),
           ],
@@ -120,9 +258,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
   // ── History List ───────────────────────────────────────────────────────────
 
-  Widget _buildHistoryList(FirestoreHistoryService service) {
-    final items = service.history;
-
+  Widget _buildHistoryList(
+    List<ScanResultModel> items,
+    FirestoreHistoryService service,
+  ) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: items.length,
